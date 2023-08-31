@@ -34,7 +34,7 @@ main() {
     database=$1
     file=$2
     extract $database $file
-    echo "blabla"
+    echo "Finished."
 }
 
 main $@
