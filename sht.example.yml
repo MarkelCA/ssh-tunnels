@@ -1,6 +1,10 @@
+# Format:
+#   ssh -N -L <port_forward>:<host_destination>:<port_destination> <user_server>@<host_server> -f -i <ssh_key_path>
+# Example:
+#   ssh -N -L 3333:my-database.com:3306 myuser@my-server.com -f -i ~/.ssh/my_ssh_key
 my_database:
   prod:
-    host_destination: example.com
+    host_destination: my-database.com
     port_destination: 3306
     port_forward: 3333
     host_server: my-server.com
