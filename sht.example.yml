@@ -1,0 +1,9 @@
+my_database:
+  prod:
+    host_destination: example.com
+    port_destination: 3306
+    port_forward: 3333
+    host_server: my-server.com
+    user_server: myuser
+    ssh_key_path:  ~/.ssh/my_ssh_key
+

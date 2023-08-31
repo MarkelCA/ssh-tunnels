@@ -1,0 +1,36 @@
+#!/bin/bash
+
+# Load the values from YAML using yq and store them in variables
+# eval "$(yq '.smowl_db.prod' sht.yml | to_entries[] | "export \(.key)=\(.value)"' sht.yml)"
+# yq '.smowl_db.prod' sht.yml
+
+# Display the values (optional)
+print_vars() {
+    echo "host_destination: $host_destination"
+    echo "port_destination: $port_destination"
+    echo "port_forward: $port_forward"
+    echo "host_server: $host_server"
+    echo "user_server: $user_server"
+    echo "ssh_key_path: $ssh_key_path"
+}
+
+open_tunnel() {
+    ssh -N -L ${content['port_forward']}:${content['host_destination']}:${content['port_destination']} ${content['user_server']}@${content['host_server']} -f -i ${content['ssh_key_path']}
+}
+
+extract() {
+    declare -A content
+    database=$1
+
+    while IFS="=" read -r key value; do content["$key"]=$value; done < <(
+        yq '.smowl_db.prod | to_entries | map([.key, .value] | join("=")) | .[]' ./sht.yml
+    )
+    open_tunnel $content
+}
+
+main() {
+    extract $1
+    echo "blabla"
+}
+
+main $@
