@@ -15,21 +15,25 @@ print_vars() {
 }
 
 open_tunnel() {
-    ssh -N -L ${content['port_forward']}:${content['host_destination']}:${content['port_destination']} ${content['user_server']}@${content['host_server']} -f -i ${content['ssh_key_path']}
+    command="ssh -N -L ${content['port_forward']}:${content['host_destination']}:${content['port_destination']} ${content['user_server']}@${content['host_server']} -f -i ${content['ssh_key_path']}"
+    echo "Running: $command"
+    eval $command
 }
 
 extract() {
     declare -A content
     database=$1
-
+    file=$2
     while IFS="=" read -r key value; do content["$key"]=$value; done < <(
-        yq '.smowl_db.prod | to_entries | map([.key, .value] | join("=")) | .[]' ./sht.yml
+        yq ".$database | to_entries | map([.key, .value] | join(\"=\")) | .[]" $file
     )
     open_tunnel $content
 }
 
 main() {
-    extract $1
+    database=$1
+    file=$2
+    extract $database $file
     echo "blabla"
 }
 
