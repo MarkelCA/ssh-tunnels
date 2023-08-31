@@ -1,0 +1,6 @@
+- [ ] Exit if the specified file doesn't exist
+- [ ] Support custom query and yml format
+    - Need to preserve the map params as the current example, everything else could be customizable
+- [ ] Add command to open all
+- [ ] Add command to close by query
+- [ ] Add command to close all
