@@ -1,5 +1,7 @@
-# Dependencies
-[yq](https://github.com/mikefarah/yq)
+# Installation
+## Dependencies
+- [yq](https://github.com/mikefarah/yq) (YAML Query)
+- [openssh](https://www.openssh.com) (The `ssh` command)
 
 # Configuration
 Copy the `ssht.example.yml` to `ssht.yml` and configure it with your own variables
