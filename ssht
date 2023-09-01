@@ -39,7 +39,7 @@ run_command() {
     command=$1
     case $command in
         "open")  open_tunnel  $@ ;;
-        "close") close_tunnel  ;;
+        "close") close_tunnel $@ ;;
         "show") show  ;;
         "list") list  ;;
         "help") help ${@:2}  ;;
@@ -79,6 +79,8 @@ close_tunnel() {
     if [ ${#POSITIONAL_ARGS[@]} -gt 2 ]; then
         error_too_many_params
     fi
+    command=$1
+    database=$2
 
     read_config $command $database $FILE
     cmd="fuser ${content['port_forward']}/tcp -k"

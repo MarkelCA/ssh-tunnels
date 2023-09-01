@@ -1,7 +1,9 @@
 # To do
 - [ ] Exit if the specified file doesn't exist
 - [ ] Add command to open all 
+    - ssht open
 - [ ] Add command to close all
+    - ssht close
 
 # Done
 - [X] Support custom query and yml format
