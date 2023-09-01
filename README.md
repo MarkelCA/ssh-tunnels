@@ -1,7 +1,7 @@
 # Installation
 ## Dependencies
 - [yq](https://github.com/mikefarah/yq) (YAML Query)
-- [openssh](https://www.openssh.com) (The `ssh` command)
+- [openssh](https://www.openssh.com): The `ssh` command (Should be available in most Linux distributions).
 
 ## Install
 
