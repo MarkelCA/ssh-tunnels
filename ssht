@@ -1,11 +1,12 @@
 #!/bin/bash
 
 DEFAULT_CONFIG_PATH="$HOME/.config/ssht/ssht.yml"
+FILE=""
 
 declare -A content
 
 open_tunnel() {
-    read_config $command $database $file
+    read_config $command $database $FILE
     key=""
     if [ -n "${content['ssh_key_path']}" ]; then
         key="-i ${content['ssh_key_path']}"
@@ -19,36 +20,33 @@ open_tunnel() {
 read_config() {
     cmd=$1
     database=$2
-    file=$3
     while IFS="=" read -r key value; do content["$key"]=$value; done < <(
-        yq ".tunnels."$database" | to_entries | map([.key, .value] | join(\"=\")) | .[]" $file
+        yq ".tunnels.\"$database\" | to_entries | map([.key, .value] | join(\"=\")) | .[]" $FILE
     )
 
 }
 
 close_tunnel() {
-    read_config $command $database $file
+    read_config $command $database $FILE
     cmd="fuser ${content['port_forward']}/tcp -k"
     echo "Running: $cmd"
     eval $cmd
 }
 
 show() {
-    file=$1
-    if [ -z "$file" ] ; then
-        file=$DEFAULT_CONFIG_PATH
+    if [ -z "$FILE" ] ; then
+        FILE=$DEFAULT_CONFIG_PATH
     fi
 
-    yq $file
+    yq $FILE
 }
 
 list() {
-    file=$1
-    if [ -z "$file" ] ; then
-        file=$DEFAULT_CONFIG_PATH
+    if [ -z "$FILE" ] ; then
+        FILE=$DEFAULT_CONFIG_PATH
     fi
 
-    yq '.tunnels | keys' $file
+    yq '.tunnels | keys' $FILE
 }
 
 run_command() {
@@ -62,16 +60,38 @@ run_command() {
     esac
 }
 
+parse_args() {
+    while [[ $# -gt 0 ]]; do
+  case $1 in
+    -f|--file)
+      FILE="$2"
+      shift # past argument
+      shift # past value
+      ;;
+    -*|--*)
+      echo "Unknown option $1"
+      exit 1
+      ;;
+    *)
+      POSITIONAL_ARGS+=("$1") # save positional arg
+      shift # past argument
+      ;;
+  esac
+done
+}
+
 main() {
     command=$1
     database=$2
-    file=$3
 
-    if [ -z "$file" ] ; then
-        file=$DEFAULT_CONFIG_PATH
+    parse_args $@
+
+
+    if [ -z "$FILE" ] ; then
+        FILE=$DEFAULT_CONFIG_PATH
     fi
 
-    run_command $command $database $file
+    run_command $command $database
 
     echo "Finished."
 }

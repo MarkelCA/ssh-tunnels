@@ -12,7 +12,14 @@ wget https://raw.githubusercontent.com/MarkelCA/ssh-tunnels/master/ssht \
 ```
 
 # Configuration
-Copy the `ssht.example.yml` to `ssht.yml` and configure it with your own variables
+The default configuration file is read from `~/.config/ssht/ssht.yml`. However, you can specify other files using the `-f` flag for every command.
+
+To create your configuration copy the example yaml:
+```bash
+mkdir -p ~/.config/ssht/
+cp ./ssht.example.yml ~/.config/ssht/ssht.yml
+```
+Now modify the file to add your own tunnel configurations.
 
 ## Example
 You can check the config example from `ssht.example.yml`
@@ -46,7 +53,7 @@ tunnels:
       user_server: myuser
       # (missing ssh_key_path) -> In this case it will pick the ssh key from the ~/.ssh/config file
 ```
-# Use case
+# Use cases
 ```
 Usage scenarios
 ===============
@@ -90,9 +97,10 @@ outside (``LOCAL CLIENT``'s perspective).
 ```
 *Credits on this section to [pahaz/sshtunnel](https://github.com/pahaz/sshtunnel)*
 # Run
+This commands are written for the above example configuration file (`ssht.example.yml`)
 ```bash
-./ssht open my_database.prod ./ssht.example.yml
-./ssht open my_other_database # This will pick the ssh key from the ~/.ssh/config file
+./ssht open my_database.prod -f ./ssht.example.yml
+./ssht open my_other_database
 ./ssht close my_other_database 
 ```
 Output:
