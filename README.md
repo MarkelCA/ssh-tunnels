@@ -89,7 +89,7 @@ outside (``LOCAL CLIENT``'s perspective).
         CLIENT   | <== SSH ========> |  SERVER  | <== local ==> | SERVER
     -------------+              |    +----------+               +---------
                                 |
-                             FIREWALL (only port 443 is open)
+                             FIREWALL (only port 22 is open)
 
     ----------------------------------------------------------------------
 
