@@ -1,8 +1,8 @@
 #!/bin/bash
 
 # Load the values from YAML using yq and store them in variables
-# eval "$(yq '.smowl_db.prod' sht.yml | to_entries[] | "export \(.key)=\(.value)"' sht.yml)"
-# yq '.smowl_db.prod' sht.yml
+# eval "$(yq '.smowl_db.prod' ssht.yml | to_entries[] | "export \(.key)=\(.value)"' ssht.yml)"
+# yq '.smowl_db.prod' ssht.yml
 
 # Display the values (optional)
 print_vars() {
