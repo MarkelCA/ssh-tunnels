@@ -1,5 +1,7 @@
 #!/bin/bash
 
+declare -A content
+
 open_tunnel() {
     command="ssh -N -L ${content['port_forward']}:${content['host_destination']}:${content['port_destination']} ${content['user_server']}@${content['host_server']} -f -i ${content['ssh_key_path']}"
     echo "Running: $command"
@@ -7,7 +9,6 @@ open_tunnel() {
 }
 
 read_config() {
-    declare -A content
     cmd=$1
     database=$2
     file=$3
@@ -15,7 +16,6 @@ read_config() {
         yq ".$database | to_entries | map([.key, .value] | join(\"=\")) | .[]" $file
     )
 
-    run_command $command
 }
 
 close_tunnel() {
@@ -35,9 +35,10 @@ run_command() {
 
 main() {
     command=$1
-    database=$t
+    database=$2
     file=$3
-    read_config $1 $2 $3
+    read_config $command $database $file
+    run_command $command
     echo "Finished."
 }
 
