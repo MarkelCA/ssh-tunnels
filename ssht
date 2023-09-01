@@ -8,20 +8,36 @@ open_tunnel() {
 
 read_config() {
     declare -A content
-    database=$1
-    file=$2
+    cmd=$1
+    database=$2
+    file=$3
     while IFS="=" read -r key value; do content["$key"]=$value; done < <(
         yq ".$database | to_entries | map([.key, .value] | join(\"=\")) | .[]" $file
     )
-    echo $content;
-    open_tunnel $content
+
+    run_command $command
+}
+
+close_tunnel() {
+    cmd="fuser ${content['port_forward']}/tcp -k"
+    echo "Running: $cmd"
+    eval $cmd
+}
+
+run_command() {
+    command=$1
+    case $command in
+        "open")  open_tunnel  ${@:2} ;;
+        "close") close_tunnel  ;;
+        *) fail "Error - Unknown awsi command." ;;
+    esac
 }
 
 main() {
     command=$1
     database=$t
     file=$3
-    read_config $2 $3
+    read_config $1 $2 $3
     echo "Finished."
 }
 
