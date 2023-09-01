@@ -156,7 +156,8 @@ print_open_help() {
     cat << EOF
 Opens an ssh tunnel from a YAML configuration given a specific query.
 
-usage: ssht open <query> [-f|--file <file>]
+Usage:
+ssht open <query> [-f|--file <file>]
 
 Examples:
 ssht open my_database.prod
@@ -171,7 +172,8 @@ print_close_help() {
     cat << EOF
 Closes an ssh tunnel from a YAML configuration given a specific query.
 
-usage: ssht close <query> [-f|--file <file>]
+Usage:
+ssht close <query> [-f|--file <file>]
 
 Examples:
 ssht close my_database.prod
@@ -187,7 +189,8 @@ print_show_help() {
     cat << EOF
 Displays an ssht YAML configuration.
 
-usage: ssht show [-f|--file <file>]
+Usage:
+ssht show [-f|--file <file>]
 
 Examples:
 ssht show
@@ -202,7 +205,8 @@ print_list_help() {
     cat << EOF
 Lists the available ssht tunnels from a YAML configuration.
 
-usage: ssht list [-f|--file <file>]
+Usage: 
+ssht list [-f|--file <file>]
 
 Examples:
 ssht list
