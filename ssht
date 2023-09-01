@@ -1,11 +1,19 @@
 #!/bin/bash
 
 DEFAULT_CONFIG_PATH="$HOME/.config/ssht/ssht.yml"
-FILE=""
 
 declare -A content
 
+error_too_many_params() {
+    echo "Error - Too many positional params for this command."
+    exit 1
+}
+
 open_tunnel() {
+    if [ ${#POSITIONAL_ARGS[@]} -gt 2 ]; then
+        error_too_many_params
+    fi
+
     read_config $command $database $FILE
     key=""
     if [ -n "${content['ssh_key_path']}" ]; then
@@ -27,6 +35,10 @@ read_config() {
 }
 
 close_tunnel() {
+    if [ ${#POSITIONAL_ARGS[@]} -gt 2 ]; then
+        error_too_many_params
+    fi
+
     read_config $command $database $FILE
     cmd="fuser ${content['port_forward']}/tcp -k"
     echo "Running: $cmd"
@@ -34,6 +46,10 @@ close_tunnel() {
 }
 
 show() {
+    if [ ${#POSITIONAL_ARGS[@]} -gt 1 ]; then
+        error_too_many_params
+    fi
+
     if [ -z "$FILE" ] ; then
         FILE=$DEFAULT_CONFIG_PATH
     fi
@@ -42,6 +58,10 @@ show() {
 }
 
 list() {
+    if [ ${#POSITIONAL_ARGS[@]} -gt 1 ]; then
+        error_too_many_params
+    fi
+
     if [ -z "$FILE" ] ; then
         FILE=$DEFAULT_CONFIG_PATH
     fi
@@ -62,22 +82,22 @@ run_command() {
 
 parse_args() {
     while [[ $# -gt 0 ]]; do
-  case $1 in
-    -f|--file)
-      FILE="$2"
-      shift # past argument
-      shift # past value
-      ;;
-    -*|--*)
-      echo "Unknown option $1"
-      exit 1
-      ;;
-    *)
-      POSITIONAL_ARGS+=("$1") # save positional arg
-      shift # past argument
-      ;;
-  esac
-done
+        case $1 in
+            -f|--file)
+                FILE="$2"
+                shift # past argument
+                shift # past value
+            ;;
+            -*|--*)
+                echo "Unknown option $1"
+                exit 1
+            ;;
+            *)
+                POSITIONAL_ARGS+=("$1") # save positional arg
+                shift # past argument
+            ;;
+        esac
+    done
 }
 
 main() {
@@ -87,11 +107,13 @@ main() {
     parse_args $@
 
 
+
     if [ -z "$FILE" ] ; then
         FILE=$DEFAULT_CONFIG_PATH
     fi
 
     run_command $command $database
+
 
     echo "Finished."
 }
