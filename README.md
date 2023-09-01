@@ -15,18 +15,35 @@ You can check the config example from `ssht.example.yml`
 #   ssh -N -L 3333:my-database.com:3306 myuser@my-server.com -f -i ~/.ssh/my_ssh_key
 my_database:
   prod:
-    host_destination: my-database.com
+    host_destination: my-prod-database.com
     port_destination: 3306
     port_forward: 3333
-    host_server: my-server.com
+    host_server: my-prod-server.com
     user_server: myuser
-    ssh_key_path:  ~/.ssh/my_ssh_key
+    ssh_key_path:  ~/.ssh/my_prod_ssh_key
 
+  test:
+    host_destination: my-test-database.com
+    port_destination: 3306
+    port_forward: 3334
+    host_server: my-test-server.com
+    user_server: myuser
+    ssh_key_path:  ~/.ssh/my_test_ssh_key
+
+my_other_database:
+    host_destination: my-other-database.com
+    port_destination: 3306
+    port_forward: 3335
+    host_server: my-other-server.com
+    user_server: myuser
+    # (missing ssh_key_path) -> In this case it will pick the ssh key from the ~/.ssh/config file
 ```
 
 # Run
 ```bash
-./ssht my_database.prod ./ssht.example.yml
+./ssht open my_database.prod ./ssht.example.yml
+./ssht open my_other_database # This will pick the ssh key from the ~/.ssh/config file
+./ssht close my_other_database 
 ```
 Output:
 ```ssh

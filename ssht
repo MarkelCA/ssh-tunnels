@@ -1,9 +1,16 @@
 #!/bin/bash
 
+DEFAULT_CONFIG_PATH="$HOME/.config/ssht/ssht.yml"
+
 declare -A content
 
 open_tunnel() {
-    command="ssh -N -L ${content['port_forward']}:${content['host_destination']}:${content['port_destination']} ${content['user_server']}@${content['host_server']} -f -i ${content['ssh_key_path']}"
+    key=""
+    if [ -n "${content['ssh_key_path']}" ]; then
+        key="-i ${content['ssh_key_path']}"
+    fi
+
+    command="ssh -N -L ${content['port_forward']}:${content['host_destination']}:${content['port_destination']} ${content['user_server']}@${content['host_server']} -f $key"
     echo "Running: $command"
     eval $command
 }
@@ -37,8 +44,14 @@ main() {
     command=$1
     database=$2
     file=$3
+
+    if [ -z "$file" ] ; then
+        file=$DEFAULT_CONFIG_PATH
+    fi
+
     read_config $command $database $file
     run_command $command
+
     echo "Finished."
 }
 
