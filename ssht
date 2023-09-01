@@ -1,39 +1,27 @@
 #!/bin/bash
 
-# Load the values from YAML using yq and store them in variables
-# eval "$(yq '.smowl_db.prod' ssht.yml | to_entries[] | "export \(.key)=\(.value)"' ssht.yml)"
-# yq '.smowl_db.prod' ssht.yml
-
-# Display the values (optional)
-print_vars() {
-    echo "host_destination: $host_destination"
-    echo "port_destination: $port_destination"
-    echo "port_forward: $port_forward"
-    echo "host_server: $host_server"
-    echo "user_server: $user_server"
-    echo "ssh_key_path: $ssh_key_path"
-}
-
 open_tunnel() {
     command="ssh -N -L ${content['port_forward']}:${content['host_destination']}:${content['port_destination']} ${content['user_server']}@${content['host_server']} -f -i ${content['ssh_key_path']}"
     echo "Running: $command"
     eval $command
 }
 
-extract() {
+read_config() {
     declare -A content
     database=$1
     file=$2
     while IFS="=" read -r key value; do content["$key"]=$value; done < <(
         yq ".$database | to_entries | map([.key, .value] | join(\"=\")) | .[]" $file
     )
+    echo $content;
     open_tunnel $content
 }
 
 main() {
-    database=$1
-    file=$2
-    extract $database $file
+    command=$1
+    database=$t
+    file=$3
+    read_config $2 $3
     echo "Finished."
 }
 
