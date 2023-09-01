@@ -96,16 +96,29 @@ outside (``LOCAL CLIENT``'s perspective).
 **Fig2**: How to connect to ``PRIVATE SERVER`` through SSH tunnel.
 ```
 *Credits on this section to [pahaz/sshtunnel](https://github.com/pahaz/sshtunnel)*
+
 # Run
-This commands are written for the above example configuration file (`ssht.example.yml`)
+You can type the help command to learn the usage.
 ```bash
-./ssht open my_database.prod -f ./ssht.example.yml
-./ssht open my_other_database
-./ssht close my_other_database 
-```
-Output:
-```ssh
-➜  ssh-tunnels git:(master) ./ssht my_database.prod ./ssht.example.yml
-Running: ssh -N -L 3333:my-database.com:3306 myuser@my-server.com -f -i ~/.ssh/my_ssh_key
-Warning: Identity file /home/markel/.ssh/my_ssh_key not accessible: No such file or directory.
+➜  ~ ssht help
+Manages SSH tunnels from a YAML configuration.
+
+Usage:
+ssht <command> [-f|--file <file>]
+
+Commands:
+    - open <query>    Opens an ssh tunnel
+    - close <query>   Closes an ssh tunnel
+    - show            Shows an ssht.yml configuration
+    - list            Lists the available tunnels in the configuration
+
+Options:
+    - -f|--file   The configuration file. Default if none is
+                  provided: ~/.config/ssht/ssht.yml
+
+Help with specific command:
+ssht help <command>
+
+Example:
+ssht help open
 ```

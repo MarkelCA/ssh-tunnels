@@ -4,15 +4,56 @@ DEFAULT_CONFIG_PATH="$HOME/.config/ssht/ssht.yml"
 
 declare -A content
 
-error_too_many_params() {
-    echo "Error - Too many positional params for this command."
-    exit 1
+main() {
+    parse_args $@
+
+    # If no file is specified the default file is chosen
+    if [ -z "$FILE" ] ; then
+        FILE=$DEFAULT_CONFIG_PATH
+    fi
+
+    run_command $@
+}
+
+parse_args() {
+    while [[ $# -gt 0 ]]; do
+        case $1 in
+            -f|--file)
+                FILE="$2"
+                shift # past argument
+                shift # past value
+            ;;
+            -*|--*)
+                echo "Unknown option $1"
+                exit 1
+            ;;
+            *)
+                POSITIONAL_ARGS+=("$1") # save positional arg
+                shift # past argument
+            ;;
+        esac
+    done
+}
+
+run_command() {
+    command=$1
+    case $command in
+        "open")  open_tunnel  $@ ;;
+        "close") close_tunnel  ;;
+        "show") show  ;;
+        "list") list  ;;
+        "help") help ${@:2}  ;;
+        *) echo "Error - Command not found." ;;
+    esac
 }
 
 open_tunnel() {
     if [ ${#POSITIONAL_ARGS[@]} -gt 2 ]; then
         error_too_many_params
     fi
+
+    command=$1
+    database=$2
 
     read_config $command $database $FILE
     key=""
@@ -50,10 +91,6 @@ show() {
         error_too_many_params
     fi
 
-    if [ -z "$FILE" ] ; then
-        FILE=$DEFAULT_CONFIG_PATH
-    fi
-
     yq $FILE
 }
 
@@ -62,60 +99,128 @@ list() {
         error_too_many_params
     fi
 
-    if [ -z "$FILE" ] ; then
-        FILE=$DEFAULT_CONFIG_PATH
-    fi
-
     yq '.tunnels | keys' $FILE
 }
 
-run_command() {
+error_too_many_params() {
+    echo "Error - Too many positional params for this command."
+    exit 1
+}
+
+help() {
+    if [ ${#POSITIONAL_ARGS[@]} -gt 2 ]; then
+        error_too_many_params
+    fi
+
     command=$1
     case $command in
-        "open")  open_tunnel  ${@:2} ;;
-        "close") close_tunnel  ;;
-        "show") show ${@:2} ;;
-        "list") list ${@:2} ;;
-        *) fail "Error - Unknown awsi command." ;;
+        "") print_main_help  ;;
+        "open") print_open_help  ;;
+        "close") print_close_help  ;;
+        "show") print_show_help  ;;
+        "list") print_list_help  ;;
+        *) 
+            echo "Error - Command not found." 
+            print_available_commands
+        ;;
     esac
 }
 
-parse_args() {
-    while [[ $# -gt 0 ]]; do
-        case $1 in
-            -f|--file)
-                FILE="$2"
-                shift # past argument
-                shift # past value
-            ;;
-            -*|--*)
-                echo "Unknown option $1"
-                exit 1
-            ;;
-            *)
-                POSITIONAL_ARGS+=("$1") # save positional arg
-                shift # past argument
-            ;;
-        esac
-    done
+print_main_help() {
+    cat << EOF
+Manages SSH tunnels from a YAML configuration.
+
+Usage: 
+ssht <command> [-f|--file <file>]
+
+Commands:
+    - open <query>    Opens an ssh tunnel
+    - close <query>   Closes an ssh tunnel
+    - show            Shows an ssht.yml configuration
+    - list            Lists the available tunnels in the configuration
+
+Options:
+    - -f|--file   The configuration file. Default if none is 
+                  provided: ~/.config/ssht/ssht.yml
+
+Help with specific command: 
+ssht help <command>
+
+Example: 
+ssht help open
+
+EOF
 }
 
-main() {
-    command=$1
-    database=$2
+print_open_help() {
+    cat << EOF
+Opens an ssh tunnel from a YAML configuration given a specific query.
 
-    parse_args $@
+usage: ssht open <query> [-f|--file <file>]
 
+Examples:
+ssht open my_database.prod
+ssht open my_database.test -f my-config.yml
 
+The example above is using the ssht.example.yml config file from the repository.
+For more info visit: https://github.com/markelca/ssh-tunnels#example
+EOF
+}
 
-    if [ -z "$FILE" ] ; then
-        FILE=$DEFAULT_CONFIG_PATH
-    fi
+print_close_help() {
+    cat << EOF
+Closes an ssh tunnel from a YAML configuration given a specific query.
 
-    run_command $command $database
+usage: ssht close <query> [-f|--file <file>]
 
+Examples:
+ssht close my_database.prod
+ssht close my_database.test -f my-config.yml
 
-    echo "Finished."
+The example above is using the ssht.example.yml config file from the repository.
+For more info visit: https://github.com/markelca/ssh-tunnels#example
+EOF
+
+}
+
+print_show_help() {
+    cat << EOF
+Displays an ssht YAML configuration.
+
+usage: ssht show [-f|--file <file>]
+
+Examples:
+ssht show
+ssht show -f ssht.example.yml
+
+The example above is using the ssht.example.yml config file from the repository.
+For more info visit: https://github.com/markelca/ssh-tunnels#example
+EOF
+}
+
+print_list_help() {
+    cat << EOF
+Lists the available ssht tunnels from a YAML configuration.
+
+usage: ssht list [-f|--file <file>]
+
+Examples:
+ssht list
+ssht list -f ssht.example.yml
+
+The example above is using the ssht.example.yml config file from the repository.
+For more info visit: https://github.com/markelca/ssh-tunnels#example
+EOF
+}
+
+print_available_commands() {
+    cat << EOF
+The available commands are:
+    - open
+    - close
+    - show
+    - list
+EOF
 }
 
 main $@
