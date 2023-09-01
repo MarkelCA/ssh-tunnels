@@ -1,14 +1,10 @@
+# To do
 - [ ] Exit if the specified file doesn't exist
-- [ ] Support custom query and yml format
-    - Need to preserve the map params as the current example, everything else could be customizable
 - [ ] Add command to open all 
-- [ ] Add default config file
-- [ ] Add command to close by query
 - [ ] Add command to close all
 
-- [ ] Achieve the following syntax:
-    - `ssht open`: *Opens all*
-    - `ssht my_databas.prod`: *Opens one*
-    - `ssht close`: *Closes all*
-    - `ssht close my_databas.prod`: *Closes one*
-    - `ssht open -f ./another-config.yml`: *Opens all from another config file*
+# Done
+- [X] Support custom query and yml format
+- [X] Add default config file
+- [X] Achieve a nice syntax:
+- [X] Add command to close by query
