@@ -5,6 +5,7 @@ DEFAULT_CONFIG_PATH="$HOME/.config/ssht/ssht.yml"
 declare -A content
 
 open_tunnel() {
+    read_config $command $database $file
     key=""
     if [ -n "${content['ssh_key_path']}" ]; then
         key="-i ${content['ssh_key_path']}"
@@ -20,15 +21,34 @@ read_config() {
     database=$2
     file=$3
     while IFS="=" read -r key value; do content["$key"]=$value; done < <(
-        yq ".$database | to_entries | map([.key, .value] | join(\"=\")) | .[]" $file
+        yq ".tunnels."$database" | to_entries | map([.key, .value] | join(\"=\")) | .[]" $file
     )
 
 }
 
 close_tunnel() {
+    read_config $command $database $file
     cmd="fuser ${content['port_forward']}/tcp -k"
     echo "Running: $cmd"
     eval $cmd
+}
+
+show() {
+    file=$1
+    if [ -z "$file" ] ; then
+        file=$DEFAULT_CONFIG_PATH
+    fi
+
+    yq $file
+}
+
+list() {
+    file=$1
+    if [ -z "$file" ] ; then
+        file=$DEFAULT_CONFIG_PATH
+    fi
+
+    yq '.tunnels | keys' $file
 }
 
 run_command() {
@@ -36,6 +56,8 @@ run_command() {
     case $command in
         "open")  open_tunnel  ${@:2} ;;
         "close") close_tunnel  ;;
+        "show") show ${@:2} ;;
+        "list") list ${@:2} ;;
         *) fail "Error - Unknown awsi command." ;;
     esac
 }
@@ -49,8 +71,7 @@ main() {
         file=$DEFAULT_CONFIG_PATH
     fi
 
-    read_config $command $database $file
-    run_command $command
+    run_command $command $database $file
 
     echo "Finished."
 }
