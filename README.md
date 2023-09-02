@@ -56,37 +56,38 @@ cp ./ssht.example.yml ~/.config/ssht/ssht.yml
 Now modify the file to add your own tunnel configurations.
 
 ## Example
-You can check the config example from `ssht.example.yml`
+Let's break down the example from `ssht.example.yml`.
+
 ```yml
-# Format:
-#   ssh -N -L <port_forward>:<host_destination>:<port_destination> <user_server>@<host_server> -f -i <ssh_key_path>
-# Example:
-#   ssh -N -L 3333:my-prod-database.com:3306 myuser@my-prod-server.com -f -i ~/.ssh/my_prod_ssh_key
 tunnels:
-  my_database.prod:
-      host_destination: my-prod-database.com
+  remote_database.prod:
+      host_destination: remote-database.com
       port_destination: 3306
       port_forward: 3333
-      host_server: my-prod-server.com
+      host_server: remote-database.com
       user_server: myuser
-      ssh_key_path:  ~/.ssh/my_prod_ssh_key
+      ssh_key_path:  ~/.ssh/remote_database_key
 
-  my_database.test:
-    host_destination: my-test-database.com
-    port_destination: 3306
-    port_forward: 3334
-    host_server: my-test-server.com
-    user_server: myuser
-    ssh_key_path:  ~/.ssh/my_test_ssh_key
-
-  my_other_database:
-      host_destination: my-other-database.com
+  private_database:
+      host_destination: private-database.com
       port_destination: 3306
       port_forward: 3335
-      host_server: my-other-server.com
+      host_server: remote-server.com
       user_server: myuser
       # (missing ssh_key_path) -> In this case it will pick the ssh key from the ~/.ssh/config file
 ```
+
+This example config file complements the first section explanation. The `remote_database.prod` would represent the first picture, where the `host_destination` and the `host_server` is the same, while the `private_database` example does likewise with the second picture, where the database lies in the same network but not the same machine as the `host_server`.
+
+If you're familiar with the openssh's tunnel management the params from the yaml file will be transformed to this command:
+`ssh -N -L <port_forward>:<host_destination>:<port_destination> <user_server>@<host_server> -f -i <ssh_key_path>`
+
+Example:
+`ssh -N -L 3333:remote-database.com:3306 myuser@remote-database.com -f -i ~/.ssh/remote_database_key`
+
+If no `ssh_key_path` if provided the `-f` command will be ommited and the command will be tried with the default key specified at the `~/.ssh/config` file.
+
+
 
 # Run
 You can type the help command to learn the usage.
