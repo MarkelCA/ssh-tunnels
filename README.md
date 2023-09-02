@@ -85,7 +85,7 @@ If you're familiar with the openssh's tunnel management the params from the yaml
 Example:
 `ssh -N -L 3333:remote-database.com:3306 myuser@remote-database.com -f -i ~/.ssh/remote_database_key`
 
-If no `ssh_key_path` if provided the `-f` command will be ommited and the command will be tried with the default key specified at the `~/.ssh/config` file.
+If no `ssh_key_path` if provided the `ssh`'s command `-f` option will be ommited and the command will be tried with the default key specified at the `~/.ssh/config` file.
 
 
 
