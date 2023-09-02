@@ -1,3 +1,39 @@
+# What is this script for?
+One of the typical scenarios where ``ssht`` is helpful is depicted in the figure below. User may need to connect a port of a remote database (i.e. 3306) where only SSH port (usually port 22) is reachable.
+
+```
+    ----------------------------------------------------------------------
+
+                                |
+    -------------+              |    +------------+
+        LOCAL    |              |    |  REMOTE    | :22 SSH
+        CLIENT   | <== SSH ========> |  DATABASE  | :3306 database
+    -------------+              |    +------------+
+                                |
+                             FIREWALL (only port 22 is open)
+
+    ----------------------------------------------------------------------
+```
+**Fig1**: How to connect to a service blocked by a firewall through SSH tunnel.
+
+If allowed by the SSH server, it is also possible to reach a private database (from the perspective of ``REMOTE SERVER``) not directly visible from the outside (``LOCAL CLIENT``'s perspective). 
+```
+
+    ----------------------------------------------------------------------
+
+                                |
+    -------------+              |    +----------+               +-----------+
+        LOCAL    |              |    |  REMOTE  | :22 SSH       | PRIVATE   |
+        CLIENT   | <== SSH ========> |  SERVER  | <== local ==> | DATABASE  | :3306 database
+    -------------+              |    +----------+               +-----------+
+                                |
+                             FIREWALL (only port 22 is open)
+
+    ----------------------------------------------------------------------
+```
+**Fig2**: How to connect to ``PRIVATE DATABASE`` through SSH tunnel.
+
+*Credits on this section to [pahaz/sshtunnel](https://github.com/pahaz/sshtunnel)*
 # Installation
 ## Dependencies
 - [yq](https://github.com/mikefarah/yq) (YAML Query)
@@ -51,49 +87,6 @@ tunnels:
       user_server: myuser
       # (missing ssh_key_path) -> In this case it will pick the ssh key from the ~/.ssh/config file
 ```
-# Use cases
-```
-Usage scenarios
-===============
-
-One of the typical scenarios where ``ssht`` is helpful is depicted in the
-figure below. User may need to connect a port of a remote server (i.e. 8080)
-where only SSH port (usually port 22) is reachable.
-
-    ----------------------------------------------------------------------
-
-                                |
-    -------------+              |    +----------+
-        LOCAL    |              |    |  REMOTE  | :22 SSH
-        CLIENT   | <== SSH ========> |  SERVER  | :8080 web service
-    -------------+              |    +----------+
-                                |
-                             FIREWALL (only port 22 is open)
-
-    ----------------------------------------------------------------------
-
-**Fig1**: How to connect to a service blocked by a firewall through SSH tunnel.
-
-
-If allowed by the SSH server, it is also possible to reach a private server
-(from the perspective of ``REMOTE SERVER``) not directly visible from the
-outside (``LOCAL CLIENT``'s perspective). 
-
-    ----------------------------------------------------------------------
-
-                                |
-    -------------+              |    +----------+               +---------
-        LOCAL    |              |    |  REMOTE  |               | PRIVATE
-        CLIENT   | <== SSH ========> |  SERVER  | <== local ==> | SERVER
-    -------------+              |    +----------+               +---------
-                                |
-                             FIREWALL (only port 22 is open)
-
-    ----------------------------------------------------------------------
-
-**Fig2**: How to connect to ``PRIVATE SERVER`` through SSH tunnel.
-```
-*Credits on this section to [pahaz/sshtunnel](https://github.com/pahaz/sshtunnel)*
 
 # Run
 You can type the help command to learn the usage.
@@ -105,8 +98,8 @@ Usage:
 ssht <command> [-f|--file <file>]
 
 Commands:
-    - open <query>    Opens an ssh tunnel
-    - close <query>   Closes an ssh tunnel
+    - open [query]    Opens ssh tunnels
+    - close [query]   Closes ssh tunnels
     - show            Shows an ssht.yml configuration
     - list            Lists the available tunnels in the configuration
 
