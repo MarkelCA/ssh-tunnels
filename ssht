@@ -38,6 +38,7 @@ parse_args() {
 run_command() {
     command=$1
     case $command in
+        "") print_main_help ;;
         "open")  open_tunnel  $@ ;;
         "close") close_tunnel $@ ;;
         "show") show  ;;

@@ -4,11 +4,9 @@
 - [openssh](https://www.openssh.com): The `ssh` command (Should be available in most Linux distributions).
 
 ## Install
-
 ```bash
-wget https://raw.githubusercontent.com/MarkelCA/ssh-tunnels/master/ssht \
-    && sudo chmod +x ./ssht \
-    && sudo mv ./ssht /usr/bin/
+sudo wget https://github.com/MarkelCA/ssh-tunnels/releases/download/latest/ssht -O /usr/bin/ssht \
+    && sudo chmod +x /usr/bin/ssht
 ```
 
 # Configuration
