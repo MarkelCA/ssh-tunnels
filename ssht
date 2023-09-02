@@ -2,7 +2,7 @@
 
 DEFAULT_CONFIG_PATH="$HOME/.config/ssht/ssht.yml"
 
-declare -A content
+declare -A tunnel_params
 
 main() {
     parse_args $@
@@ -48,6 +48,7 @@ run_command() {
     esac
 }
 
+
 open_tunnel() {
     if [ ${#POSITIONAL_ARGS[@]} -gt 2 ]; then
         error_too_many_params
@@ -56,21 +57,39 @@ open_tunnel() {
     command=$1
     database=$2
 
-    read_config $command $database $FILE
-    key=""
-    if [ -n "${content['ssh_key_path']}" ]; then
-        key="-i ${content['ssh_key_path']}"
+
+    if [ -z $database ] ; then
+        open_all_tunnels
+        exit 0
     fi
 
-    command="ssh -N -L ${content['port_forward']}:${content['host_destination']}:${content['port_destination']} ${content['user_server']}@${content['host_server']} -f $key"
-    echo "Running: $command"
-    eval $command
+    read_config $command $database $FILE
+
+    key=""
+    if [ -n "${tunnel_params['ssh_key_path']}" ]; then
+        key="-i ${tunnel_params['ssh_key_path']}"
+    fi
+
+    ssh_cmd="ssh -N -L ${tunnel_params['port_forward']}:${tunnel_params['host_destination']}:${tunnel_params['port_destination']} ${tunnel_params['user_server']}@${tunnel_params['host_server']} -f $key"
+    echo "Running: $ssh_cmd"
+    eval $ssh_cmd
+}
+
+open_all_tunnels() {
+        all_configs=$(yq '.tunnels | keys | .[]' $FILE)
+        for config in $all_configs ; do
+            read_config $command $config $FILE
+            open_tunnel $command $config
+        done
 }
 
 read_config() {
     cmd=$1
     database=$2
-    while IFS="=" read -r key value; do content["$key"]=$value; done < <(
+
+    # unset $tunnel_params
+
+    while IFS="=" read -r key value; do tunnel_params["$key"]=$value; done < <(
         yq ".tunnels.\"$database\" | to_entries | map([.key, .value] | join(\"=\")) | .[]" $FILE
     )
 
@@ -80,13 +99,27 @@ close_tunnel() {
     if [ ${#POSITIONAL_ARGS[@]} -gt 2 ]; then
         error_too_many_params
     fi
+
     command=$1
     database=$2
 
+    if [ -z $database ] ; then
+        close_all_tunnels
+        exit 0
+    fi
+
     read_config $command $database $FILE
-    cmd="fuser ${content['port_forward']}/tcp -k"
-    echo "Running: $cmd"
+    cmd="fuser ${tunnel_params['port_forward']}/tcp -k"
+    echo "Running (killing the process): $cmd"
     eval $cmd
+}
+
+close_all_tunnels() {
+    all_configs=$(yq '.tunnels | keys | .[]' $FILE)
+    for config in $all_configs ; do
+        read_config $command $config $FILE
+        close_tunnel $command $config
+    done
 }
 
 show() {
@@ -137,8 +170,8 @@ Usage:
 ssht <command> [-f|--file <file>]
 
 Commands:
-    - open <query>    Opens an ssh tunnel
-    - close <query>   Closes an ssh tunnel
+    - open [query]    Opens ssh tunnels
+    - close [query]   Closes ssh tunnels
     - show            Shows an ssht.yml configuration
     - list            Lists the available tunnels in the configuration
 
@@ -157,10 +190,13 @@ EOF
 
 print_open_help() {
     cat << EOF
-Opens an ssh tunnel from a YAML configuration given a specific query.
+Opens an ssh tunnel from a YAML configuration given an optional query.
 
 Usage:
-ssht open <query> [-f|--file <file>]
+ssht open [query] [-f|--file <file>]
+
+The query must match the name of some tunnel in your config file.
+If no query is provided it will open all the tunnels available.
 
 Examples:
 ssht open my_database.prod
@@ -176,7 +212,10 @@ print_close_help() {
 Closes an ssh tunnel from a YAML configuration given a specific query.
 
 Usage:
-ssht close <query> [-f|--file <file>]
+ssht close [query] [-f|--file <file>]
+
+The query must match the name of some tunnel in your config file.
+If no query is provided it will close all the tunnels available.
 
 Examples:
 ssht close my_database.prod
