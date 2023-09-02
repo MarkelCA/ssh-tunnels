@@ -60,7 +60,7 @@ Let's break down the example from `ssht.example.yml`.
 
 ```yml
 tunnels:
-  remote_database.prod:
+  remote_database:
       host_destination: remote-database.com
       port_destination: 3306
       port_forward: 3333
