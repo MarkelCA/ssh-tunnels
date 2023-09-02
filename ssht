@@ -55,15 +55,15 @@ open_tunnel() {
     fi
 
     command=$1
-    database=$2
+    process_name=$2
 
 
-    if [ -z $database ] ; then
+    if [ -z $process_name ] ; then
         open_all_tunnels
         exit 0
     fi
 
-    read_config $command $database $FILE
+    read_config $command $process_name $FILE
 
     key=""
     if [ -n "${tunnel_params['ssh_key_path']}" ]; then
@@ -85,15 +85,21 @@ open_all_tunnels() {
 
 read_config() {
     cmd=$1
-    database=$2
-
-    # unset $tunnel_params
+    process_name=$2
 
     while IFS="=" read -r key value; do tunnel_params["$key"]=$value; done < <(
-        yq ".tunnels.\"$database\" | to_entries | map([.key, .value] | join(\"=\")) | .[]" $FILE
+        yq ".tunnels.\"$process_name\" | to_entries | map([.key, .value] | join(\"=\")) | .[]" $FILE
     )
 
+    if [ ${#tunnel_params[@]} -eq 0 ] ; then
+        error_process_name_not_found $2
+    fi
 }
+error_process_name_not_found() {
+    >&2 echo "Error - The name \"$1\" couldn't be found in the config file."
+    exit 1
+}
+
 
 close_tunnel() {
     if [ ${#POSITIONAL_ARGS[@]} -gt 2 ]; then
@@ -101,16 +107,16 @@ close_tunnel() {
     fi
 
     command=$1
-    database=$2
+    process_name=$2
 
-    if [ -z $database ] ; then
+    if [ -z $process_name ] ; then
         close_all_tunnels
         exit 0
     fi
 
-    read_config $command $database $FILE
+    read_config $command $process_name $FILE
     cmd="fuser ${tunnel_params['port_forward']}/tcp -k"
-    echo "Running (killing the process): $cmd"
+    echo "Running (killing the process_name): $cmd"
     eval $cmd
 }
 
@@ -139,7 +145,7 @@ list() {
 }
 
 error_too_many_params() {
-    echo "Error - Too many positional params for this command."
+    >&2 echo "Error - Too many positional params for this command."
     exit 1
 }
 
