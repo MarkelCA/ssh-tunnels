@@ -132,7 +132,12 @@ tunnel::close() {
         exit 0
     fi
 
-    cmd="fuser $(tunnel::get_port_forward $process_name)/tcp -k"
+    port=$(tunnel::get_port_forward $process_name)
+
+    if [[ $port == "null" ]] ; then
+        error::process_name_not_found $process_name
+    fi
+    cmd="fuser $port/tcp -k"
     echo "Running (killing the process_name): $cmd"
     eval $cmd
 }
@@ -165,9 +170,9 @@ tunnel::status() {
     if [[ $port == "null" ]] ; then
         error::process_name_not_found $process_name
     fi
-
+    
     # We check if the port is from is LISTENING and it's an ssh command
-    if [ -n "$(lsof -i tcp:$port | grep 'ssh.*LISTEN')"  ] ; then
+    if nc -z localhost $port ; then
         echo -e "${GREEN}open${NC}"
     else
         echo -e "${RED}closed${NC}"
@@ -309,10 +314,14 @@ EOF
 help::status() {
     echo "Status help"
     cat << EOF
-Shows if a tunnel is opened or closed
+Shows if a tunnel is opened or closed.
 
 Usage:
 ssht status [query] [-f|--file <file>]
+
+It only shows if a process is running on the forwaded port, so it
+could give false positives (e.g. zombie process, network related 
+problems). To ensure connectivity use tools like autossh.
 
 The query must match the name of some tunnel in your config file.
 If no query is provided it will show the status for all the tunnels 
