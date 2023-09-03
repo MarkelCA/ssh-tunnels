@@ -25,7 +25,7 @@ parse_args() {
             ;;
             -*|--*)
                 echo "Unknown option $1"
-                exit 1
+                exit 3
             ;;
             *)
                 POSITIONAL_ARGS+=("$1") # save positional arg
@@ -38,20 +38,23 @@ parse_args() {
 run_command() {
     command=$1
     case $command in
-        "") print_main_help ;;
+        "") help::main ;;
         "open")  open_tunnel  $@ ;;
         "close") close_tunnel $@ ;;
         "show") show  ;;
         "list") list  ;;
         "help") help ${@:2}  ;;
-        *) echo "Error - Command not found." ;;
+        *) 
+            echo "Error - Command not found." 
+            print_available_commands
+        ;;
     esac
 }
 
 
 open_tunnel() {
     if [ ${#POSITIONAL_ARGS[@]} -gt 2 ]; then
-        error_too_many_params
+        error::too_many_params
     fi
 
     command=$1
@@ -92,18 +95,19 @@ read_config() {
     )
 
     if [ ${#tunnel_params[@]} -eq 0 ] ; then
-        error_process_name_not_found $2
+        error::process_name_not_found $2
     fi
 }
-error_process_name_not_found() {
+error::process_name_not_found() {
     >&2 echo "Error - The name \"$1\" couldn't be found in the config file."
+    echo "Use \"ssht list\" to display the available tunnels."
     exit 1
 }
 
 
 close_tunnel() {
     if [ ${#POSITIONAL_ARGS[@]} -gt 2 ]; then
-        error_too_many_params
+        error::too_many_params
     fi
 
     command=$1
@@ -130,7 +134,7 @@ close_all_tunnels() {
 
 show() {
     if [ ${#POSITIONAL_ARGS[@]} -gt 1 ]; then
-        error_too_many_params
+        error::too_many_params
     fi
 
     yq $FILE
@@ -138,29 +142,33 @@ show() {
 
 list() {
     if [ ${#POSITIONAL_ARGS[@]} -gt 1 ]; then
-        error_too_many_params
+        error::too_many_params
     fi
 
-    yq '.tunnels | keys' $FILE
+    yq '... comments="" | .tunnels | keys ' $FILE
 }
 
-error_too_many_params() {
+error::too_many_params() {
     >&2 echo "Error - Too many positional params for this command."
-    exit 1
+    exit 2
 }
+
+####################
+# HELP FUNCTIONS
+####################
 
 help() {
     if [ ${#POSITIONAL_ARGS[@]} -gt 2 ]; then
-        error_too_many_params
+        error::too_many_params
     fi
 
     command=$1
     case $command in
-        "") print_main_help  ;;
-        "open") print_open_help  ;;
-        "close") print_close_help  ;;
-        "show") print_show_help  ;;
-        "list") print_list_help  ;;
+        "") help::main  ;;
+        "open") help::open  ;;
+        "close") help::close  ;;
+        "show") help::show  ;;
+        "list") help::list  ;;
         *) 
             echo "Error - Command not found." 
             print_available_commands
@@ -168,7 +176,7 @@ help() {
     esac
 }
 
-print_main_help() {
+help::main() {
     cat << EOF
 Manages SSH tunnels from a YAML configuration.
 
@@ -193,7 +201,7 @@ ssht help open
 EOF
 }
 
-print_open_help() {
+help::open() {
     cat << EOF
 Opens an ssh tunnel from a YAML configuration given an optional query.
 
@@ -212,7 +220,7 @@ For more info visit: https://github.com/markelca/ssh-tunnels#example
 EOF
 }
 
-print_close_help() {
+help::close() {
     cat << EOF
 Closes an ssh tunnel from a YAML configuration given a specific query.
 
@@ -232,7 +240,7 @@ EOF
 
 }
 
-print_show_help() {
+help::show() {
     cat << EOF
 Displays an ssht YAML configuration.
 
@@ -248,7 +256,7 @@ For more info visit: https://github.com/markelca/ssh-tunnels#example
 EOF
 }
 
-print_list_help() {
+help::list() {
     cat << EOF
 Lists the available ssht tunnels from a YAML configuration.
 
