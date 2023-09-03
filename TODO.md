@@ -1,7 +1,7 @@
 # To do
-- [ ] Fix strange behavior on `ssht open` when some `ssht_key_path`'s are missing
 
 # Done
+- [X] Fix strange behavior on `ssht open` when some `ssht_key_path`'s are missing
 - [X] Support custom query and yml format
 - [X] Add default config file
 - [X] Achieve a nice syntax:

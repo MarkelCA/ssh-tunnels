@@ -20,6 +20,10 @@ main() {
     # If no file is specified the default file is chosen
     if [ -z "$FILE" ] ; then
         FILE=$DEFAULT_CONFIG_PATH
+    else
+        if [[ ! -f "$FILE" ]] ; then
+            error::unknown_file $FILE
+        fi
     fi
 
     run_command $@
@@ -32,6 +36,7 @@ parse_args() {
         case $1 in
             -f|--file)
                 FILE="$2"
+                OPTIONS+=("$1")
                 shift # past argument
                 shift # past value
             ;;
@@ -52,9 +57,9 @@ run_command() {
     command=$1
     case $command in
         "") help::main ;;
-        "open")  tunnel::open  ${@:2} ;;
-        "close") tunnel::close ${@:2} ;;
-        "status") tunnel::status ${@:2} ;;
+        "open")  tunnel::open  ${POSITIONAL_ARGS[@]:1} ;;
+        "close") tunnel::close ${POSITIONAL_ARGS[@]:1} ;;
+        "status") tunnel::status ${POSITIONAL_ARGS[@]:1} ;;
         "show") tunnel::show  ;;
         "list") tunnel::list  ;;
         "help") help ${@:2}  ;;
@@ -70,7 +75,7 @@ run_command() {
 ####################
 tunnel::open() {
     if [ ${#POSITIONAL_ARGS[@]} -gt 2 ]; then
-        error::too_many_params
+        error::too_many_params ${#POSITIONAL_ARGS[@]}
     fi
 
     process_name=$1
@@ -118,7 +123,7 @@ tunnel::read_config() {
 
 tunnel::close() {
     if [ ${#POSITIONAL_ARGS[@]} -gt 2 ]; then
-        error::too_many_params
+        error::too_many_params ${#POSITIONAL_ARGS[@]}
     fi
     process_name=$1
 
@@ -145,6 +150,9 @@ tunnel::get_port_forward() {
 }
 
 tunnel::status() {
+    if [ ${#POSITIONAL_ARGS[@]} -gt 2 ]; then
+        error::too_many_params ${#POSITIONAL_ARGS[@]}
+    fi
 
     process_name=$1
 
@@ -177,7 +185,7 @@ tunnel::status_all() {
 
 tunnel::show() {
     if [ ${#POSITIONAL_ARGS[@]} -gt 1 ]; then
-        error::too_many_params
+        error::too_many_params ${#POSITIONAL_ARGS[@]}
     fi
 
     yq $FILE
@@ -185,7 +193,7 @@ tunnel::show() {
 
 tunnel::list() {
     if [ ${#POSITIONAL_ARGS[@]} -gt 1 ]; then
-        error::too_many_params
+        error::too_many_params ${#POSITIONAL_ARGS[@]}
     fi
 
     yq '... comments="" | .tunnels | keys ' $FILE
@@ -195,27 +203,45 @@ tunnel::list() {
 # ERROR FUNCTIONS
 ####################
 error::process_name_not_found() {
-    >&2 echo "Error - The name \"$1\" couldn't be found in the config file."
+    process_name=$1
+    >&2 echo "Error - The name \"$process_name\" couldn't be found in the config file."
     echo "Use \"ssht list\" to display the available tunnels."
     exit 1
 }
 
 error::too_many_params() {
-    >&2 echo "Error - Too many positional params for this command."
+    param_count=$1
+    >&2 echo "Error - Too many positional params for this command ($param_count)"
     exit 2
 }
 
 error::unknown_option() {
-    >&2 echo "Error - Unknown option \"$1\""
+    option=$1
+    >&2 echo "Error - Unknown option \"$option\""
     exit 3
+}
+
+error::unknown_file() {
+    file=$1
+    >&2 echo "Error - The file \"$file\" couldn't be found"
+    exit 4
+}
+error::help_command_options() {
+    option=$1
+    >&2 echo "The help command does't allow any options. You provided \"$option\""
+    exit 5
 }
 
 ####################
 # HELP FUNCTIONS
 ####################
 help() {
+    if [ ${#OPTIONS[@]} -gt 0 ]; then
+        error::help_command_options ${OPTIONS[0]}
+    fi
+
     if [ ${#POSITIONAL_ARGS[@]} -gt 2 ]; then
-        error::too_many_params
+        error::too_many_params ${#POSITIONAL_ARGS[@]}
     fi
 
     command=$1
@@ -258,6 +284,7 @@ ssht help <command>
 
 Example: 
 ssht help open
+ssht help help
 
 For more info visit: https://github.com/markelca/ssh-tunnels#example
 EOF
