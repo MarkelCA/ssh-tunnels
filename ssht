@@ -41,6 +41,7 @@ run_command() {
         "") help::main ;;
         "open")  open_tunnel  $@ ;;
         "close") close_tunnel $@ ;;
+        "status") status ${@:2} ;;
         "show") show  ;;
         "list") list  ;;
         "help") help ${@:2}  ;;
@@ -132,6 +133,48 @@ close_all_tunnels() {
     done
 }
 
+status_all() {
+    
+    # echo -e "Format: ${GREEN}open${NC} | ${RED}closed${NC}\n"
+
+    all_configs=$(yq '.tunnels | keys | .[]' $FILE)
+    for config in $all_configs ; do
+        result=$(status $config)
+        case "$result" in
+            "open")   color=$GREEN ;;
+            "closed") color=$RED ;;
+        esac
+        echo "- $config:"
+        echo "  $result"
+        
+    done
+}
+
+status() {
+    GREEN='\033[0;32m'
+    RED='\033[0;31m'
+    NC='\033[0m' # No Color
+
+    process_name=$1
+
+    if [ -z $process_name ] ; then
+        status_all
+        exit 0
+    fi
+
+    port=$(yq ".tunnels.\"$process_name\".port_forward" $FILE)
+    if [[ $port == "null" ]] ; then
+        error::process_name_not_found $2
+    fi
+
+    if [ -n "$(lsof -i tcp:$port)"  ] ; then
+        echo -e "${GREEN}open${NC}"
+    else
+        echo -e "${RED}closed${NC}"
+    fi
+    
+}
+
 show() {
     if [ ${#POSITIONAL_ARGS[@]} -gt 1 ]; then
         error::too_many_params
@@ -167,6 +210,7 @@ help() {
         "") help::main  ;;
         "open") help::open  ;;
         "close") help::close  ;;
+        "status") help::close  ;;
         "show") help::show  ;;
         "list") help::list  ;;
         *) 
@@ -186,6 +230,7 @@ ssht <command> [-f|--file <file>]
 Commands:
     - open [query]    Opens ssh tunnels
     - close [query]   Closes ssh tunnels
+    - status [query]
     - show            Shows an ssht.yml configuration
     - list            Lists the available tunnels in the configuration
 
@@ -220,6 +265,9 @@ For more info visit: https://github.com/markelca/ssh-tunnels#example
 EOF
 }
 
+help::status() {
+    echo "Status help"
+}
 help::close() {
     cat << EOF
 Closes an ssh tunnel from a YAML configuration given a specific query.
@@ -277,6 +325,7 @@ print_available_commands() {
 The available commands are:
     - open
     - close
+    - status
     - show
     - list
 EOF
