@@ -101,8 +101,10 @@ ssht <command> [-f|--file <file>]
 Commands:
     - open [query]    Opens ssh tunnels
     - close [query]   Closes ssh tunnels
+    - status [query]  Shows if a tunnel is opened or closed.
     - show            Shows an ssht.yml configuration
     - list            Lists the available tunnels in the configuration
+    - help [command]  Shows the help description for a command
 
 Options:
     - -f|--file   The configuration file. Default if none is
@@ -113,4 +115,6 @@ ssht help <command>
 
 Example:
 ssht help open
+
+For more info visit: https://github.com/markelca/ssh-tunnels#example
 ```
