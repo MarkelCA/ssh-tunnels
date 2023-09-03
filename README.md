@@ -60,7 +60,7 @@ Let's break down the example from `ssht.example.yml`.
 
 ```yml
 tunnels:
-  remote_database.prod:
+  remote_database:
       host_destination: remote-database.com
       port_destination: 3306
       port_forward: 3333
@@ -77,7 +77,7 @@ tunnels:
       # (missing ssh_key_path) -> In this case it will pick the ssh key from the ~/.ssh/config file
 ```
 
-This example config file complements the [first section's explanation](https://github.com/MarkelCA/ssh-tunnels/tree/master#what-is-this-script-for). The `remote_database.prod` would represent the first picture, where the `host_destination` and the `host_server` is the same, while the `private_database` example does likewise with the second picture, where the database lies in the same network but not the same machine as the `host_server`.
+This example config file complements the [first section's explanation](https://github.com/MarkelCA/ssh-tunnels/tree/master#what-is-this-script-for). The `remote_database` would represent the first picture, where the `host_destination` and the `host_server` is the same, while the `private_database` example does likewise with the second picture, where the database lies in the same network but not the same machine as the `host_server`.
 
 If you're familiar with the openssh's tunnel management the params from the yaml file will be transformed to this command:
 `ssh -N -L <port_forward>:<host_destination>:<port_destination> <user_server>@<host_server> -f -i <ssh_key_path>`
@@ -85,7 +85,7 @@ If you're familiar with the openssh's tunnel management the params from the yaml
 Example:
 `ssh -N -L 3333:remote-database.com:3306 myuser@remote-database.com -f -i ~/.ssh/remote_database_key`
 
-If no `ssh_key_path` if provided the `-f` command will be ommited and the command will be tried with the default key specified at the `~/.ssh/config` file.
+If no `ssh_key_path` if provided the `ssh`'s command `-f` option will be ommited and the command will be tried with the default key specified at the `~/.ssh/config` file.
 
 
 
