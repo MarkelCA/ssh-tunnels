@@ -1,8 +1,8 @@
 #!/bin/bash
 
+declare -A tunnel_params
 DEFAULT_CONFIG_PATH="$HOME/.config/ssht/ssht.yml"
 
-declare -A tunnel_params
 
 main() {
     parse_args $@
@@ -39,8 +39,8 @@ run_command() {
     command=$1
     case $command in
         "") help::main ;;
-        "open")  open_tunnel  $@ ;;
-        "close") close_tunnel $@ ;;
+        "open")  open_tunnel  ${@:2} ;;
+        "close") close_tunnel ${@:2} ;;
         "status") status ${@:2} ;;
         "show") show  ;;
         "list") list  ;;
@@ -58,8 +58,7 @@ open_tunnel() {
         error::too_many_params
     fi
 
-    command=$1
-    process_name=$2
+    process_name=$1
 
 
     if [ -z $process_name ] ; then
@@ -67,7 +66,8 @@ open_tunnel() {
         exit 0
     fi
 
-    read_config $command $process_name $FILE
+
+    read_config $process_name $FILE
 
     key=""
     if [ -n "${tunnel_params['ssh_key_path']}" ]; then
@@ -82,14 +82,13 @@ open_tunnel() {
 open_all_tunnels() {
         all_configs=$(yq '.tunnels | keys | .[]' $FILE)
         for config in $all_configs ; do
-            read_config $command $config $FILE
-            open_tunnel $command $config
+            open_tunnel $config
         done
 }
 
 read_config() {
-    cmd=$1
-    process_name=$2
+    process_name=$1
+    tunnel_params=()
 
     while IFS="=" read -r key value; do tunnel_params["$key"]=$value; done < <(
         yq ".tunnels.\"$process_name\" | to_entries | map([.key, .value] | join(\"=\")) | .[]" $FILE
@@ -110,17 +109,14 @@ close_tunnel() {
     if [ ${#POSITIONAL_ARGS[@]} -gt 2 ]; then
         error::too_many_params
     fi
-
-    command=$1
-    process_name=$2
+    process_name=$1
 
     if [ -z $process_name ] ; then
         close_all_tunnels
         exit 0
     fi
 
-    read_config $command $process_name $FILE
-    cmd="fuser ${tunnel_params['port_forward']}/tcp -k"
+    cmd="fuser $(get_port_forward $process_name)/tcp -k"
     echo "Running (killing the process_name): $cmd"
     eval $cmd
 }
@@ -128,26 +124,21 @@ close_tunnel() {
 close_all_tunnels() {
     all_configs=$(yq '.tunnels | keys | .[]' $FILE)
     for config in $all_configs ; do
-        read_config $command $config $FILE
-        close_tunnel $command $config
+        close_tunnel $config
     done
 }
 
 status_all() {
-    
-    # echo -e "Format: ${GREEN}open${NC} | ${RED}closed${NC}\n"
-
     all_configs=$(yq '.tunnels | keys | .[]' $FILE)
     for config in $all_configs ; do
-        result=$(status $config)
-        case "$result" in
-            "open")   color=$GREEN ;;
-            "closed") color=$RED ;;
-        esac
         echo "- $config:"
-        echo "  $result"
-        
+        echo "  $(status $config)"
     done
+}
+
+get_port_forward() {
+    process_name=$1
+    yq ".tunnels.\"$process_name\".port_forward" $FILE
 }
 
 status() {
@@ -162,12 +153,13 @@ status() {
         exit 0
     fi
 
-    port=$(yq ".tunnels.\"$process_name\".port_forward" $FILE)
+    port=$(get_port_forward $process_name)
     if [[ $port == "null" ]] ; then
         error::process_name_not_found $process_name
     fi
 
-    if [ -n "$(lsof -i tcp:$port)"  ] ; then
+    # We check if the port is from is LISTENING and it's an ssh command
+    if [ -n "$(lsof -i tcp:$port | grep 'ssh.*LISTEN')"  ] ; then
         echo -e "${GREEN}open${NC}"
     else
         echo -e "${RED}closed${NC}"
