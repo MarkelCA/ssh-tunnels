@@ -60,7 +60,7 @@ run_command() {
         "open")  tunnel::open  ${POSITIONAL_ARGS[@]:1} ;;
         "close") tunnel::close ${POSITIONAL_ARGS[@]:1} ;;
         "status") tunnel::status ${POSITIONAL_ARGS[@]:1} ;;
-        "show") tunnel::show  ;;
+        "show") tunnel::show ${POSITIONAL_ARGS[@]:1} ;;
         "list") tunnel::list  ;;
         "help") help ${@:2}  ;;
         *) 
@@ -80,15 +80,12 @@ tunnel::open() {
 
     process_name=$1
 
-
     if [ -z $process_name ] ; then
         tunnel::open_all
         exit 0
     fi
 
-
     tunnel::read_config $process_name
-
     key=""
     if [ -n "${tunnel_params['ssh_key_path']}" ]; then
         key="-i ${tunnel_params['ssh_key_path']}"
@@ -189,11 +186,27 @@ tunnel::status_all() {
 }
 
 tunnel::show() {
-    if [ ${#POSITIONAL_ARGS[@]} -gt 1 ]; then
+    if [ ${#POSITIONAL_ARGS[@]} -gt 2 ]; then
         error::too_many_params ${#POSITIONAL_ARGS[@]}
     fi
 
-    yq $FILE
+    process_name=$1
+    if [ -z $process_name ] ; then
+        yq $FILE
+        exit 0
+    fi
+
+    yq ".tunnels.\"$process_name\"" $FILE
+}
+
+tunnel::exists() {
+    process_name=$1
+    result=$(yq ".tunnels.\"$process_name\" | key" $FILE)
+    if [[ $result == "null" ]] ; then
+        return 1
+    else
+        return 0
+    fi
 }
 
 tunnel::list() {
@@ -275,8 +288,8 @@ ssht <command> [-f|--file <file>]
 Commands:
     - open [query]    Opens ssh tunnels
     - close [query]   Closes ssh tunnels
-    - status [query]  Shows if a tunnel is opened or closed.
-    - show            Shows an ssht.yml configuration
+    - status [query]  Tells if a tunnel is opened or closed.
+    - show [query]    Shows an ssht.yml configuration
     - list            Lists the available tunnels in the configuration
     - help [command]  Shows the help description for a command
 
@@ -353,13 +366,17 @@ EOF
 
 help::show() {
     cat << EOF
-Displays an ssht YAML configuration.
+Displays the ssht.yml configuration for a given a query.
+
+The query must match the name of some tunnel in your config file.
+If no query is provided it will show the entire config file.
 
 Usage:
-ssht show [-f|--file <file>]
+ssht show [query] [-f|--file <file>]
 
 Examples:
 ssht show
+ssht show remote_database
 ssht show -f ssht.example.yml
 EOF
 }
