@@ -1,4 +1,5 @@
 # To do
+- [ ] Fix strange behavior on `ssht open` when some `ssht_key_path`'s are missing
 
 # Done
 - [X] Support custom query and yml format
