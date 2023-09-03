@@ -1,11 +1,11 @@
 tunnels:
   remote_database:
-    host_destination: remote-database.com
+    host_destination: 127.0.0.1
     port_destination: 3306
     port_forward: 3333
-    host_server: remote-database.com
+    host_server: remote-server.com
     user_server: myuser
-    ssh_key_path:  ~/.ssh/remote_database_key
+    ssh_key_path:  ~/.ssh/remote_server_key
 
   private_database:
     host_destination: private-database.com
@@ -14,4 +14,3 @@ tunnels:
     host_server: remote-server.com
     user_server: myuser
     # (missing ssh_key_path) -> In this case it will pick the ssh key from the ~/.ssh/config file
-

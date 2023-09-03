@@ -228,7 +228,7 @@ error::unknown_file() {
 }
 error::help_command_options() {
     option=$1
-    >&2 echo "The help command does't allow any options. You provided \"$option\""
+    >&2 echo "Error - The help command does't allow any options. You provided \"$option\""
     exit 5
 }
 
