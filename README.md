@@ -91,7 +91,7 @@ If no `ssh_key_path` if provided the `ssh`'s command `-f` option will be ommited
 
 # Run
 You can type the help command to learn the usage.
-```bash
+```
 ➜  ~ ssht help
 Manages SSH tunnels from a YAML configuration.
 
