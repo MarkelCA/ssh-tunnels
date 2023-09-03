@@ -164,7 +164,7 @@ status() {
 
     port=$(yq ".tunnels.\"$process_name\".port_forward" $FILE)
     if [[ $port == "null" ]] ; then
-        error::process_name_not_found $2
+        error::process_name_not_found $process_name
     fi
 
     if [ -n "$(lsof -i tcp:$port)"  ] ; then
@@ -210,9 +210,10 @@ help() {
         "") help::main  ;;
         "open") help::open  ;;
         "close") help::close  ;;
-        "status") help::close  ;;
+        "status") help::status  ;;
         "show") help::show  ;;
         "list") help::list  ;;
+        "help") help::help  ;;
         *) 
             echo "Error - Command not found." 
             print_available_commands
@@ -230,9 +231,10 @@ ssht <command> [-f|--file <file>]
 Commands:
     - open [query]    Opens ssh tunnels
     - close [query]   Closes ssh tunnels
-    - status [query]
+    - status [query]  Shows if a tunnel is opened or closed.
     - show            Shows an ssht.yml configuration
     - list            Lists the available tunnels in the configuration
+    - help [command]  Shows the help description for a command
 
 Options:
     - -f|--file   The configuration file. Default if none is 
@@ -243,6 +245,8 @@ ssht help <command>
 
 Example: 
 ssht help open
+
+For more info visit: https://github.com/markelca/ssh-tunnels#example
 EOF
 }
 
@@ -257,16 +261,27 @@ The query must match the name of some tunnel in your config file.
 If no query is provided it will open all the tunnels available.
 
 Examples:
-ssht open my_database.prod
-ssht open my_database.test -f my-config.yml
-
-The example above is using the ssht.example.yml config file from the repository.
-For more info visit: https://github.com/markelca/ssh-tunnels#example
+ssht open remote_database
+ssht open private_database -f my-config.yml
 EOF
 }
 
 help::status() {
     echo "Status help"
+    cat << EOF
+Shows if a tunnel is opened or closed
+
+Usage:
+ssht status [query] [-f|--file <file>]
+
+The query must match the name of some tunnel in your config file.
+If no query is provided it will show the status for all the tunnels 
+available.
+
+Examples:
+ssht status remote_database
+ssht status private_database -f my-config.yml
+EOF
 }
 help::close() {
     cat << EOF
@@ -279,11 +294,10 @@ The query must match the name of some tunnel in your config file.
 If no query is provided it will close all the tunnels available.
 
 Examples:
-ssht close my_database.prod
-ssht close my_database.test -f my-config.yml
+ssht close remote_database
+ssht close private_database -f my-config.yml
 
 The example above is using the ssht.example.yml config file from the repository.
-For more info visit: https://github.com/markelca/ssh-tunnels#example
 EOF
 
 }
@@ -298,9 +312,6 @@ ssht show [-f|--file <file>]
 Examples:
 ssht show
 ssht show -f ssht.example.yml
-
-The example above is using the ssht.example.yml config file from the repository.
-For more info visit: https://github.com/markelca/ssh-tunnels#example
 EOF
 }
 
@@ -314,9 +325,6 @@ ssht list [-f|--file <file>]
 Examples:
 ssht list
 ssht list -f ssht.example.yml
-
-The example above is using the ssht.example.yml config file from the repository.
-For more info visit: https://github.com/markelca/ssh-tunnels#example
 EOF
 }
 
@@ -328,7 +336,22 @@ The available commands are:
     - status
     - show
     - list
+    - help
 EOF
+}
+
+help::help() {
+    cat << EOF
+Shows help text for a specific command.
+
+Usage: 
+ssht help [command]
+
+Examples:
+ssht help
+ssht help open
+EOF
+
 }
 
 main $@
