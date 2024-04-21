@@ -120,3 +120,12 @@ ssht help help
 
 For more info visit: https://github.com/markelca/ssh-tunnels#example
 ```
+## Examples
+These are some of the most usual commands you'll run with this script:
+```bash
+ssht open remote_database
+ssht open remote_database -f ./other-ssht-config.yml # Passing another config file
+ssht open ".*_database" # Allows regex expressions too
+ssht close ".*_database" # Same for closing
+```
+
