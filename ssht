@@ -22,7 +22,7 @@ main() {
         FILE=$DEFAULT_CONFIG_PATH
     else
         if [[ ! -f "$FILE" ]] ; then
-            error::unknown_file $FILE
+            error_unknown_file $FILE
         fi
     fi
 
@@ -41,7 +41,7 @@ parse_args() {
                 shift # past value
             ;;
             -*|--*)
-                error::unknown_option $1
+                error_unknown_option $1
             ;;
             *)
                 POSITIONAL_ARGS+=("$1") # save positional arg
@@ -56,12 +56,12 @@ parse_args() {
 run_command() {
     command=$1
     case $command in
-        "") help::main ;;
-        "open")  tunnel::open  ${POSITIONAL_ARGS[@]:1} ;;
-        "close") tunnel::close ${POSITIONAL_ARGS[@]:1} ;;
-        "status") tunnel::status ${POSITIONAL_ARGS[@]:1} ;;
-        "show") tunnel::show ${POSITIONAL_ARGS[@]:1} ;;
-        "list") tunnel::list  ;;
+        "") help_main ;;
+        "open")  tunnel_open  ${POSITIONAL_ARGS[@]:1} ;;
+        "close") tunnel_close ${POSITIONAL_ARGS[@]:1} ;;
+        "status") tunnel_status ${POSITIONAL_ARGS[@]:1} ;;
+        "show") tunnel_show ${POSITIONAL_ARGS[@]:1} ;;
+        "list") tunnel_list  ;;
         "help") help ${@:2}  ;;
         *) 
             echo "Error - Command not found." 
@@ -73,39 +73,50 @@ run_command() {
 ####################
 # TUNNEL FUNCTIONS
 ####################
-tunnel::open() {
+tunnel_open() {
     if [ ${#POSITIONAL_ARGS[@]} -gt 2 ]; then
-        error::too_many_params ${#POSITIONAL_ARGS[@]}
+        error_too_many_params ${#POSITIONAL_ARGS[@]}
     fi
 
     process_name=$1
 
     if [ -z $process_name ] ; then
-        tunnel::open_all
+        tunnel_open_all
         exit 0
     fi
 
-    tunnel::read_config $process_name
-    key=""
-    if [ -n "${tunnel_params['ssh_key_path']}" ]; then
-        key="-i ${tunnel_params['ssh_key_path']}"
+    if [[ $process_name == *\** ]]; then
+        for i in $(tunnel_search_wildcard $process_name) ; do
+            tunnel_open $i
+        done
+    else
+        tunnel_read_config $process_name
+        key=""
+        if [ -n "${tunnel_params['ssh_key_path']}" ]; then
+            key="-i ${tunnel_params['ssh_key_path']}"
+        fi
+
+        ssh_cmd="ssh -N -L ${tunnel_params['port_forward']}:${tunnel_params['host_destination']}:${tunnel_params['port_destination']} ${tunnel_params['user_server']}@${tunnel_params['host_server']} -f $key"
+        echo "Running: $ssh_cmd"
+        eval $ssh_cmd
     fi
 
-    ssh_cmd="ssh -N -L ${tunnel_params['port_forward']}:${tunnel_params['host_destination']}:${tunnel_params['port_destination']} ${tunnel_params['user_server']}@${tunnel_params['host_server']} -f $key"
-    echo "Running: $ssh_cmd"
-    eval $ssh_cmd
+
 }
 
-tunnel::open_all() {
+tunnel_open_all() {
         all_configs=$(yq '.tunnels | keys | .[]' $FILE)
         for config in $all_configs ; do
-            tunnel::open $config
+            tunnel_open $config
         done
 }
 
-##
+tunnel_search_wildcard() {
+    yq ".tunnels | keys | .[]" $FILE | grep "^[^#]" | grep "$1"
+}
+
 # Reads the YAML config file and loads it into an array to be used globally.
-tunnel::read_config() {
+tunnel_read_config() {
     process_name=$1
     tunnel_params=()
 
@@ -114,58 +125,64 @@ tunnel::read_config() {
     )
 
     if [ ${#tunnel_params[@]} -eq 0 ] ; then
-        error::process_name_not_found $1
+        error_process_name_not_found $1
     fi
 }
 
-tunnel::close() {
+tunnel_close() {
     if [ ${#POSITIONAL_ARGS[@]} -gt 2 ]; then
-        error::too_many_params ${#POSITIONAL_ARGS[@]}
+        error_too_many_params ${#POSITIONAL_ARGS[@]}
     fi
     process_name=$1
 
     if [ -z $process_name ] ; then
-        tunnel::close_all
+        tunnel_close_all
         exit 0
     fi
+    if [[ $process_name == *\** ]]; then
+        for i in $(tunnel_search_wildcard $process_name) ; do
+            tunnel_close $i
+        done
+    else
+        port=$(tunnel_get_port_forward $process_name)
 
-    port=$(tunnel::get_port_forward $process_name)
-
-    if [[ $port == "null" ]] ; then
-        error::process_name_not_found $process_name
+        if [[ $port == "null" ]] ; then
+            error_process_name_not_found $process_name
+        fi
+        cmd="fuser $port/tcp -k"
+        echo "Running (killing the process_name): $cmd"
+        eval $cmd
     fi
-    cmd="fuser $port/tcp -k"
-    echo "Running (killing the process_name): $cmd"
-    eval $cmd
+
 }
 
-tunnel::close_all() {
+tunnel_close_all() {
     all_configs=$(yq '.tunnels | keys | .[]' $FILE)
     for config in $all_configs ; do
-        tunnel::close $config
+        tunnel_close $config
     done
 }
 
-tunnel::get_port_forward() {
+tunnel_get_port_forward() {
     process_name=$1
     yq ".tunnels.\"$process_name\".port_forward" $FILE
 }
 
-tunnel::status() {
+tunnel_status() {
     if [ ${#POSITIONAL_ARGS[@]} -gt 2 ]; then
-        error::too_many_params ${#POSITIONAL_ARGS[@]}
+        error_too_many_params ${#POSITIONAL_ARGS[@]}
     fi
 
     process_name=$1
 
     if [ -z $process_name ] ; then
-        tunnel::status_all
+        tunnel_status_all
         exit 0
     fi
 
-    port=$(tunnel::get_port_forward $process_name)
+    port=$(tunnel_get_port_forward $process_name)
     if [[ $port == "null" ]] ; then
-        error::process_name_not_found $process_name
+        error_process_name_not_found $process_name
     fi
     
     # We check if the port is from is LISTENING and it's an ssh command
@@ -177,17 +194,17 @@ tunnel::status() {
     
 }
 
-tunnel::status_all() {
+tunnel_status_all() {
     all_configs=$(yq '.tunnels | keys | .[]' $FILE)
     for config in $all_configs ; do
         echo "- $config:"
-        echo "  $(tunnel::status $config)"
+        echo "  $(tunnel_status $config)"
     done
 }
 
-tunnel::show() {
+tunnel_show() {
     if [ ${#POSITIONAL_ARGS[@]} -gt 2 ]; then
-        error::too_many_params ${#POSITIONAL_ARGS[@]}
+        error_too_many_params ${#POSITIONAL_ARGS[@]}
     fi
 
     process_name=$1
@@ -199,7 +216,7 @@ tunnel::show() {
     yq ".tunnels.\"$process_name\"" $FILE
 }
 
-tunnel::exists() {
+tunnel_exists() {
     process_name=$1
     result=$(yq ".tunnels.\"$process_name\" | key" $FILE)
     if [[ $result == "null" ]] ; then
@@ -209,9 +226,9 @@ tunnel::exists() {
     fi
 }
 
-tunnel::list() {
+tunnel_list() {
     if [ ${#POSITIONAL_ARGS[@]} -gt 1 ]; then
-        error::too_many_params ${#POSITIONAL_ARGS[@]}
+        error_too_many_params ${#POSITIONAL_ARGS[@]}
     fi
 
     yq '... comments="" | .tunnels | keys ' $FILE
@@ -220,31 +237,31 @@ tunnel::list() {
 ####################
 # ERROR FUNCTIONS
 ####################
-error::process_name_not_found() {
+error_process_name_not_found() {
     process_name=$1
     >&2 echo "Error - The name \"$process_name\" couldn't be found in the config file."
     echo "Use \"ssht list\" to display the available tunnels."
     exit 1
 }
 
-error::too_many_params() {
+error_too_many_params() {
     param_count=$1
     >&2 echo "Error - Too many positional params for this command ($param_count)"
     exit 2
 }
 
-error::unknown_option() {
+error_unknown_option() {
     option=$1
     >&2 echo "Error - Unknown option \"$option\""
     exit 3
 }
 
-error::unknown_file() {
+error_unknown_file() {
     file=$1
     >&2 echo "Error - The file \"$file\" couldn't be found"
     exit 4
 }
-error::help_command_options() {
+error_help_command_options() {
     option=$1
     >&2 echo "Error - The help command does't allow any options. You provided \"$option\""
     exit 5
@@ -255,22 +272,22 @@ error::help_command_options() {
 ####################
 help() {
     if [ ${#OPTIONS[@]} -gt 0 ]; then
-        error::help_command_options ${OPTIONS[0]}
+        error_help_command_options ${OPTIONS[0]}
     fi
 
     if [ ${#POSITIONAL_ARGS[@]} -gt 2 ]; then
-        error::too_many_params ${#POSITIONAL_ARGS[@]}
+        error_too_many_params ${#POSITIONAL_ARGS[@]}
     fi
 
     command=$1
     case $command in
-        "") help::main  ;;
-        "open") help::open  ;;
-        "close") help::close  ;;
-        "status") help::status  ;;
-        "show") help::show  ;;
-        "list") help::list  ;;
-        "help") help::help  ;;
+        "") help_main  ;;
+        "open") help_open  ;;
+        "close") help_close  ;;
+        "status") help_status  ;;
+        "show") help_show  ;;
+        "list") help_list  ;;
+        "help") help_help  ;;
         *) 
             echo "Error - Command not found." 
             print_available_commands
@@ -278,7 +295,7 @@ help() {
     esac
 }
 
-help::main() {
+help_main() {
     cat << EOF
 Manages SSH tunnels from a YAML configuration.
 
@@ -308,7 +325,7 @@ For more info visit: https://github.com/markelca/ssh-tunnels#example
 EOF
 }
 
-help::open() {
+help_open() {
     cat << EOF
 Opens an ssh tunnel from a YAML configuration given an optional query.
 
@@ -324,7 +341,7 @@ ssht open private_database -f my-config.yml
 EOF
 }
 
-help::status() {
+help_status() {
     echo "Status help"
     cat << EOF
 Shows if a tunnel is opened or closed.
@@ -345,7 +362,7 @@ ssht status remote_database
 ssht status private_database -f my-config.yml
 EOF
 }
-help::close() {
+help_close() {
     cat << EOF
 Closes an ssh tunnel from a YAML configuration given a specific query.
 
@@ -364,7 +381,7 @@ EOF
 
 }
 
-help::show() {
+help_show() {
     cat << EOF
 Displays the ssht.yml configuration for a given a query.
 
@@ -381,7 +398,7 @@ ssht show -f ssht.example.yml
 EOF
 }
 
-help::list() {
+help_list() {
     cat << EOF
 Lists the available ssht tunnels from a YAML configuration.
 
@@ -406,7 +423,7 @@ The available commands are:
 EOF
 }
 
-help::help() {
+help_help() {
     cat << EOF
 Shows help text for a specific command.
 
